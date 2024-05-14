@@ -1,0 +1,27 @@
+{
+  "name": "phonebook-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/index.ts",
+  "scripts": {
+    "start": "node ./build/index.js",
+    "dev": "ts-node-dev ./src/index.ts",
+    "build": "tsc",
+    "updateDB": "prisma db push"
+  },
+  "author": "Covenant Ogowale",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.14.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-validator": "^7.0.1",
+    "prisma": "^5.14.0",
+    "ts-node-dev": "^2.0.0"
+  }
+}
