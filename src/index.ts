@@ -4,6 +4,7 @@ import dotenv from "dotenv"
 import STATUS from "./config/statusConfig";
 import cors from "cors"
 import helmet from "helmet";
+import cookieParser from "cookie-parser"
 
 
 //route imports
@@ -21,6 +22,8 @@ const corsOption = {
 }
 
 
+
+app.use(cookieParser())
 //web security middlewares
 app.use(cors(corsOption))
 app.use(helmet())

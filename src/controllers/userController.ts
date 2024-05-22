@@ -73,13 +73,8 @@ export const createUser = async (req: Request, res: Response) => {
       email: newUser.email,
     });
 
-    //setting the access token as a cookie and sending a success message
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-    });
-    res.status(STATUS.created).json({ msg: "User created successfully" });
+    //sending the accessToken with a success message
+    res.status(STATUS.created).json({ msg: "User created successfully", accessToken: accessToken });
   } catch (err) {
     res.sendStatus(STATUS.serverError);
   }
@@ -134,14 +129,61 @@ export const validateUser = async (req: Request, res: Response) => {
       email: user.email,
     });
 
-    //setting the access token as a cookie and sending a success message
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-    });
-    res.status(STATUS.created).json({ msg: "Login successful" });
+    //sending the accessToken with a success message
+    res.status(STATUS.ok).json({ msg: "Login Successful", accessToken: accessToken });
   } catch (err) {
     return res.sendStatus(STATUS.serverError);
   }
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+
+  //checking if theres any error in the user request body
+  const error = validationResult(req);
+
+  //returning an error if the request body error is not empty
+  if (!error.isEmpty()) {
+    return res
+      .status(STATUS.notAcceptable)
+      .json({ msg: "Invalid Values Provided" });
+  }
+
+  //getting the email from the request body
+  const { email } = req.body;
+
+  //checking if email and password values are not falsy and sending an error message if they are
+  if (!email) {
+    return res
+      .status(STATUS.notAcceptable)
+      .json({ msg: "Invalid Values Provided" });
+  }
+
+  //checking if user with the email exists
+  try {
+    const user = await checkUserExistence(email);
+
+    //sending an error message if user with the email does not exist
+    if(!user){
+      return res.status(STATUS.notFound).json({ msg: "User with email does not exists" })
+    }
+
+    //generating a reset token for the reset session 
+    const resetToken = generateToken({
+      email: email
+    })
+    
+    //sending a reset token with a success message
+    res.status(STATUS.ok).json({ msg: "Reset Token Generated Successfully", resetToken: resetToken })
+  } catch (err) {
+    return res.status(STATUS.serverError).json({ err: "An unexpected error occured" })
+  }
+
+};
+
+export const resetPassword = (req: Request, res: Response) => {
+  
+  //getting the reset id
+  const resetID = req.params
+
+
 };
