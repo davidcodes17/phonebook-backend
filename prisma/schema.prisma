@@ -25,9 +25,9 @@ model Contact {
   firstName  String
   lastName   String
   middleName String?
-  email      Email[]
+  emails     Email[]
   numbers    Number[]
-  Website    Website[]
+  websites   Website[]
   User       User?     @relation(fields: [userId], references: [id])
   userId     String?
 }
@@ -37,7 +37,7 @@ model Number {
   number    String
   owner     Contact @relation(fields: [contactId], references: [id])
   contactId String
-  isPrimary Boolean
+  isPrimary Boolean @default(false)
 }
 
 model Email {
@@ -45,7 +45,7 @@ model Email {
   email     String
   owner     Contact @relation(fields: [contactId], references: [id])
   contactId String
-  isPrimary Boolean
+  isPrimary Boolean @default(false)
 }
 
 model Website {
@@ -53,5 +53,5 @@ model Website {
   website   String
   owner     Contact @relation(fields: [contactId], references: [id])
   contactId String
-  isPrimary Boolean
+  isPrimary Boolean @default(false)
 }
