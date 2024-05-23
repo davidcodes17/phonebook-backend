@@ -22,6 +22,6 @@ router
   .route("/forgot-password")
   .post(forgotPasswordValidationRules, forgotPassword);
 
-router.route("/reset-password/:id").post(resetPasswordRules, resetPassword);
+router.route("/reset-password").post(resetPasswordRules, resetPassword);
 
 export default router;

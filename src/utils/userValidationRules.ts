@@ -10,5 +10,6 @@ export const forgotPasswordValidationRules = [
 ]
 
 export const resetPasswordRules = [
+  body("token").trim().notEmpty().withMessage("Token is required"),
   body('password').trim().notEmpty().withMessage('Password is required'),
 ]

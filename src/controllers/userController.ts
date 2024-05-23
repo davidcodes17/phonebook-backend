@@ -9,6 +9,8 @@ import generateToken from "../utils/generateToken";
 import dotenv from "dotenv";
 import checkUserExistence from "../utils/checkUserExistence";
 import comparePassword from "../utils/comparePassword";
+import { Secret } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 //dotenv config
 dotenv.config();
@@ -74,7 +76,9 @@ export const createUser = async (req: Request, res: Response) => {
     });
 
     //sending the accessToken with a success message
-    res.status(STATUS.created).json({ msg: "User created successfully", accessToken: accessToken });
+    res
+      .status(STATUS.created)
+      .json({ msg: "User created successfully", accessToken: accessToken });
   } catch (err) {
     res.sendStatus(STATUS.serverError);
   }
@@ -130,14 +134,15 @@ export const validateUser = async (req: Request, res: Response) => {
     });
 
     //sending the accessToken with a success message
-    res.status(STATUS.ok).json({ msg: "Login Successful", accessToken: accessToken });
+    res
+      .status(STATUS.ok)
+      .json({ msg: "Login Successful", accessToken: accessToken });
   } catch (err) {
     return res.sendStatus(STATUS.serverError);
   }
 };
 
 export const forgotPassword = async (req: Request, res: Response) => {
-
   //checking if theres any error in the user request body
   const error = validationResult(req);
 
@@ -163,27 +168,83 @@ export const forgotPassword = async (req: Request, res: Response) => {
     const user = await checkUserExistence(email);
 
     //sending an error message if user with the email does not exist
-    if(!user){
-      return res.status(STATUS.notFound).json({ msg: "User with email does not exists" })
+    if (!user) {
+      return res
+        .status(STATUS.notFound)
+        .json({ msg: "User with email does not exists" });
     }
 
-    //generating a reset token for the reset session 
+    //generating a reset token for the reset session
     const resetToken = generateToken({
-      email: email
-    })
-    
-    //sending a reset token with a success message
-    res.status(STATUS.ok).json({ msg: "Reset Token Generated Successfully", resetToken: resetToken })
-  } catch (err) {
-    return res.status(STATUS.serverError).json({ err: "An unexpected error occured" })
-  }
+      email: email,
+    });
 
+    //sending a reset token with a success message
+    res
+      .status(STATUS.ok)
+      .json({
+        msg: "Reset Token Generated Successfully",
+        resetToken: resetToken,
+      });
+  } catch (err) {
+    return res
+      .status(STATUS.serverError)
+      .json({ err: "An unexpected error occured" });
+  }
 };
 
-export const resetPassword = (req: Request, res: Response) => {
-  
-  //getting the reset id
-  const resetID = req.params
+export const resetPassword = async(req: Request, res: Response) => {
+  const errors = validationResult(req);
 
+  if (!errors.isEmpty()) {
+    return res
+      .status(STATUS.notAcceptable)
+      .json({ err: "Invalid values provided" });
+  }
 
+  const { token, password } = req.body;
+
+  if (!token || !password) {
+    return res
+      .status(STATUS.notAcceptable)
+      .json({ err: "Invalid values provided" });
+  }
+
+  try {
+    jwt.verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET as Secret,
+      async (err: any, decoded: any) => {
+        if (err){
+          return res.status(STATUS.unauthorized).json({ err: "Invalid Token" })
+        };
+
+        const user = await db.user.findUnique({
+          where:{
+            email: decoded.email
+          }
+        })
+
+        if(!user){
+          return res.status(STATUS.unauthorized).json({ err: "Invalid Token" })
+        }
+
+        await db.user.update({
+          where: {
+            email: decoded.email
+          },
+          data: {
+            password: await bcrypt.hash(password, 12)
+          }
+        })
+
+        res.status(STATUS.ok).json({ msg: "Password updated successfully" })
+
+      }
+    );
+  } catch (err) {
+    if (err) {
+      return res.sendStatus(STATUS.serverError);
+    }
+  }
 };
