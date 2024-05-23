@@ -33,7 +33,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }))
 
 //app routes
-app.use("/v1/api", authRoutes)
+app.use("/v1/api/auth", authRoutes)
 
 //welcome message
 app.get("/", ( _, res ) => {

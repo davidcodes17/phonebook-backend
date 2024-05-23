@@ -142,6 +142,7 @@ export const validateUser = async (req: Request, res: Response) => {
   }
 };
 
+//a controller function to handle forgotten password request
 export const forgotPassword = async (req: Request, res: Response) => {
   //checking if theres any error in the user request body
   const error = validationResult(req);
@@ -193,42 +194,54 @@ export const forgotPassword = async (req: Request, res: Response) => {
   }
 };
 
+//a controller function to handle reset password request
 export const resetPassword = async(req: Request, res: Response) => {
+  //checking if the request body is valid
   const errors = validationResult(req);
 
+  //returning an error message if there is an error present in the request body validation
   if (!errors.isEmpty()) {
     return res
       .status(STATUS.notAcceptable)
       .json({ err: "Invalid values provided" });
   }
 
+
+  //destructuring the token and password from the request body
   const { token, password } = req.body;
 
+  //checking if the values are not falsy if they are return an error message
   if (!token || !password) {
     return res
       .status(STATUS.notAcceptable)
       .json({ err: "Invalid values provided" });
   }
 
+
+  //verifying the reset token
   try {
     jwt.verify(
       token,
       process.env.ACCESS_TOKEN_SECRET as Secret,
       async (err: any, decoded: any) => {
+        //sending an error message if token is invalid
         if (err){
           return res.status(STATUS.unauthorized).json({ err: "Invalid Token" })
         };
 
+        //checking if user with email exists
         const user = await db.user.findUnique({
           where:{
             email: decoded.email
           }
         })
 
+        //sending an error message if user with the provided token exists
         if(!user){
           return res.status(STATUS.unauthorized).json({ err: "Invalid Token" })
         }
 
+        //query to update the user password in the database
         await db.user.update({
           where: {
             email: decoded.email
@@ -238,11 +251,14 @@ export const resetPassword = async(req: Request, res: Response) => {
           }
         })
 
+        // sending a success message on successful completion of the operation
         res.status(STATUS.ok).json({ msg: "Password updated successfully" })
 
       }
     );
   } catch (err) {
+
+    //sending an error message if  there is any issue with the operation
     if (err) {
       return res.sendStatus(STATUS.serverError);
     }
