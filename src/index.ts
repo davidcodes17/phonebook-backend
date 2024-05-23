@@ -35,8 +35,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use("/v1/api/auth", authRoutes);
 
 app.use(verifyUser);
-
-app.use("v1/api/contacts", contactRoutes);
+app.use("/v1/api/contacts", contactRoutes);
 
 //welcome message
 app.get("/", (_, res) => {
