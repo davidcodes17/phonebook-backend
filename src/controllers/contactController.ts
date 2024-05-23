@@ -145,7 +145,7 @@ export const createContact = async (req: any, res: Response) => {
             data: numbers.map((number: Number) => ({
               id: uuid(),
               number: number.number,
-              isPrimary: number.isPrimary || false
+              isPrimary: number.isPrimary || false,
             })),
           },
         },
@@ -175,8 +175,61 @@ export const createContact = async (req: any, res: Response) => {
   } catch (err) {
     //sending an error message if the operation as any issues
     if (err) {
-      console.log(err)
+      console.log(err);
       return res.sendStatus(STATUS.serverError);
     }
+  }
+};
+
+//a controller function to delete a contact
+export const deleteContact = async (req: any, res: Response) => {
+  //getting the id of the contact that is to be deleted
+  const contactID = req.params?.id;
+
+  try {
+    //check if the contact exists
+    const contact = await db.contact.findUnique({
+      where: {
+        id: contactID,
+      },
+    });
+
+    //return an error message if no contact is found with the specified id
+    if (!contact) {
+      return res
+        .status(STATUS.notFound)
+        .json({ err: "No contact found with the given id" });
+    }
+
+    //query to delete the contact
+    await db.$transaction([
+      db.number.deleteMany({
+        where: {
+          contactId: contactID,
+        },
+      }),
+      db.email.deleteMany({
+        where: {
+          contactId: contactID,
+        },
+      }),
+      db.website.deleteMany({
+        where: {
+          contactId: contactID,
+        },
+      }),
+      db.contact.delete({
+        where: {
+          id: contactID,
+        },
+      }),
+    ]);
+
+    //returning a success message upon successful completion of the operation
+    res.status(STATUS.noContent).json({ msg: "Contact deleted successfully" });
+  } catch (err) {
+    //returning an error message if any error occurs with the operation
+    console.log(err);
+    return res.sendStatus(STATUS.serverError);
   }
 };

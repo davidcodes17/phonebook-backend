@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createContact = exports.getContactList = void 0;
+exports.deleteContact = exports.createContact = exports.getContactList = void 0;
 const statusConfig_1 = __importDefault(require("../config/statusConfig"));
 const dbConfig_1 = __importDefault(require("../config/dbConfig"));
 const express_validator_1 = require("express-validator");
@@ -119,7 +119,7 @@ const createContact = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                         data: numbers.map((number) => ({
                             id: (0, uuid_1.v4)(),
                             number: number.number,
-                            isPrimary: number.isPrimary || false
+                            isPrimary: number.isPrimary || false,
                         })),
                     },
                 },
@@ -155,3 +155,54 @@ const createContact = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.createContact = createContact;
+//a controller function to delete a contact
+const deleteContact = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    //getting the id of the contact that is to be deleted
+    const contactID = (_a = req.params) === null || _a === void 0 ? void 0 : _a.id;
+    try {
+        //check if the contact exists
+        const contact = yield dbConfig_1.default.contact.findUnique({
+            where: {
+                id: contactID,
+            },
+        });
+        //return an error message if no contact is found with the specified id
+        if (!contact) {
+            return res
+                .status(statusConfig_1.default.notFound)
+                .json({ err: "No contact found with the given id" });
+        }
+        //query to delete the contact
+        yield dbConfig_1.default.$transaction([
+            dbConfig_1.default.number.deleteMany({
+                where: {
+                    contactId: contactID,
+                },
+            }),
+            dbConfig_1.default.email.deleteMany({
+                where: {
+                    contactId: contactID,
+                },
+            }),
+            dbConfig_1.default.website.deleteMany({
+                where: {
+                    contactId: contactID,
+                },
+            }),
+            dbConfig_1.default.contact.delete({
+                where: {
+                    id: contactID,
+                },
+            }),
+        ]);
+        //returning a success message upon successful completion of the operation
+        res.status(statusConfig_1.default.noContent).json({ msg: "Contact deleted successfully" });
+    }
+    catch (err) {
+        //returning an error message if any error occurs with the operation
+        console.log(err);
+        return res.sendStatus(statusConfig_1.default.serverError);
+    }
+});
+exports.deleteContact = deleteContact;
