@@ -3,6 +3,8 @@ import express from "express";
 import { getContactList } from "../controllers/contactController";
 import { createContact } from "../controllers/contactController";
 import { contactValidationRules } from "../utils/contactValidationRules";
+import { deleteContact } from "../controllers/contactController";
+import { editContact } from "../controllers/contactController";
 
 //creating the router instance
 export const router = express.Router();
@@ -12,5 +14,8 @@ router.route("/")
   .get(getContactList)
   .post(contactValidationRules, createContact)
 
+router.route("/:id")
+  .delete(deleteContact)
+  .put(editContact)
 
 export default router;
