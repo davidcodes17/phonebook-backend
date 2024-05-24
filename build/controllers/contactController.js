@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteContact = exports.createContact = exports.getContactList = void 0;
+exports.editContact = exports.deleteContact = exports.createContact = exports.getContactList = void 0;
 const statusConfig_1 = __importDefault(require("../config/statusConfig"));
 const dbConfig_1 = __importDefault(require("../config/dbConfig"));
 const express_validator_1 = require("express-validator");
@@ -42,6 +42,11 @@ const getContactList = (req, res) => __awaiter(void 0, void 0, void 0, function*
             where: {
                 userId: userID,
             },
+            include: {
+                numbers: true,
+                emails: true,
+                websites: true
+            }
         });
         //sending an error message if there is no user found for the user
         if (!contacts[0]) {
@@ -206,3 +211,91 @@ const deleteContact = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.deleteContact = deleteContact;
+const editContact = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //getting the contact id
+    const contactID = req.params.id;
+    //checking the if the request body is valid
+    const error = (0, express_validator_1.validationResult)(req);
+    //sending an error if the request body is not valid
+    if (!error.isEmpty()) {
+        return res
+            .status(statusConfig_1.default.notAcceptable)
+            .json({ err: "Invalid values provided" });
+    }
+    //getting the request body values
+    const { firstName, lastName, middleName, numbers, emails, websites } = req.body;
+    //checking if the required values are provided
+    if (!firstName || !lastName || !numbers || !emails || !websites) {
+        return res
+            .status(statusConfig_1.default.notAcceptable)
+            .json({ err: "Invalid values provided" });
+    }
+    try {
+        yield dbConfig_1.default.contact.update({
+            where: {
+                id: contactID
+            },
+            data: {
+                firstName: firstName,
+                lastName: lastName,
+                middleName: middleName || "",
+                emails: {
+                    upsert: emails.map((email) => ({
+                        where: {
+                            id: email.id ? email.id : ""
+                        },
+                        create: {
+                            id: (0, uuid_1.v4)(),
+                            email: email.email,
+                            isPrimary: email.isPrimary || false,
+                        },
+                        update: {
+                            email: email.email,
+                            isPrimary: email.isPrimary || false
+                        }
+                    }))
+                },
+                numbers: {
+                    upsert: numbers.map((number) => ({
+                        where: {
+                            id: number.id ? number.id : ""
+                        },
+                        create: {
+                            id: (0, uuid_1.v4)(),
+                            number: number.number,
+                            isPrimary: number.isPrimary || false,
+                        },
+                        update: {
+                            number: number.number,
+                            isPrimary: number.isPrimary || false
+                        }
+                    }))
+                },
+                websites: {
+                    upsert: websites.map((website) => ({
+                        where: {
+                            id: website.id ? website.id : ""
+                        },
+                        create: {
+                            id: (0, uuid_1.v4)(),
+                            website: website.website,
+                            isPrimary: website.isPrimary || false
+                        },
+                        update: {
+                            website: website.website,
+                            isPrimary: website.isPrimary || false
+                        }
+                    }))
+                }
+            }
+        });
+        res.status(statusConfig_1.default.ok).json({ msg: "Contact updated successfully" });
+    }
+    catch (err) {
+        if (err) {
+            console.log(err);
+            return res.sendStatus(statusConfig_1.default.serverError);
+        }
+    }
+});
+exports.editContact = editContact;
